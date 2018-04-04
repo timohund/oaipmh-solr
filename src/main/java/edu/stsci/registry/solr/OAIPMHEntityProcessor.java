@@ -337,24 +337,26 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                     Node n = nList.item(i);
                     String nTxt = n.getTextContent();
                     if(dateTimeFormat != null){
-                        try {
-                            // Convert input date into a date that solr understands
-                            SimpleDateFormat recordDateFormat = new SimpleDateFormat(dateTimeFormat);
-                            Date recordDate = recordDateFormat.parse(nTxt);
-                            SimpleDateFormat solrDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                            String solrDateTxt = solrDateFormat.format(recordDate);
-                            valueList.add(solrDateTxt);
-                        } catch (ParseException ex) {
-                            logger.error(ex);
-                        }
-                    } else if (dateRange != null) {
-                        // Convert input date range into a date range that solr understands
-                        String years[] = nTxt.split("-");
-                        if (years.length > 1) {
+                        if (dateRange != null && nTxt.matches("\\d{4}-\\d{4}")) {
+                            String years[] = nTxt.split("-");
                             String rangeTxt = "[" + String.join(" TO ", years) + "]";
                             valueList.add(rangeTxt);
                         } else {
-                            valueList.add(nTxt);
+                            try {
+                                // Convert input date into a date that solr understands
+                                SimpleDateFormat recordDateFormat;
+                                if (nTxt.matches("^\\d{4}$")) {
+                                    recordDateFormat = new SimpleDateFormat("yyyy");
+                                } else {
+                                    recordDateFormat = new SimpleDateFormat(dateTimeFormat);
+                                }
+                                Date recordDate = recordDateFormat.parse(nTxt);
+                                SimpleDateFormat solrDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                                String solrDateTxt = solrDateFormat.format(recordDate);
+                                valueList.add(solrDateTxt);
+                            } catch (ParseException ex) {
+                                logger.error(ex);
+                            }
                         }
                     } else {
                         valueList.add(nTxt);
