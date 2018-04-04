@@ -52,6 +52,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -337,8 +339,10 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                     Node n = nList.item(i);
                     String nTxt = n.getTextContent();
                     if(dateTimeFormat != null){
-                        if (dateRange != null && nTxt.matches("^\\d{4}-\\d{4}$")) {
-                            String years[] = nTxt.split("-");
+                        Pattern yearRangePattern = Pattern.compile("\\d{4}-\\d{4}");
+                        Matcher yearRangeMatcher = yearRangePattern.matcher(nTxt);
+                        if (dateRange != null && yearRangeMatcher.find()) {
+                            String years[] = yearRangeMatcher.group(0).split("-");
                             String rangeTxt = "[" + String.join(" TO ", years) + "]";
                             valueList.add(rangeTxt);
                         } else {
