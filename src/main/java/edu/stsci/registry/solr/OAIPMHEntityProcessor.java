@@ -348,7 +348,11 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                         } else {
                             try {
                                 // Convert input date into a date that solr understands
-                                if (nTxt.matches("^\\d{4}$")) {
+                                Pattern fullDatePattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
+                                Matcher fullDateMatcher = fullDatePattern.matcher(nTxt);
+                                if (fullDateMatcher.find()) {
+                                    nTxt = fullDateMatcher.group(0);
+                                } else if (nTxt.matches("^\\d{4}$")) {
                                     dateTimeFormat = "yyyy";
                                 } else if (nTxt.matches("^\\d{4}-\\d{2}$")) {
                                     dateTimeFormat = "yyyy-MM";
