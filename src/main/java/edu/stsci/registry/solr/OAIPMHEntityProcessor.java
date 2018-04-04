@@ -338,39 +338,56 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                 for(int i=0;i<nList.getLength();i++){
                     Node n = nList.item(i);
                     String nTxt = n.getTextContent().trim();
-                    if(dateTimeFormat != null && nTxt != ""){
-                        Pattern yearRangePattern = Pattern.compile("\\d{4}-\\d{4}");
-                        Matcher yearRangeMatcher = yearRangePattern.matcher(nTxt);
-                        if (dateRange != null && yearRangeMatcher.find()) {
-                            String years[] = yearRangeMatcher.group(0).split("-");
-                            String rangeTxt = "[" + String.join(" TO ", years) + "]";
-                            valueList.add(rangeTxt);
-                        } else {
-                            try {
-                                // Convert input date into a date that solr understands
-                                Pattern fullDatePattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
-                                Matcher fullDateMatcher = fullDatePattern.matcher(nTxt);
-                                if (fullDateMatcher.find()) {
-                                    nTxt = fullDateMatcher.group(0);
-                                } else if (nTxt.matches("^\\d{4}$")) {
-                                    dateTimeFormat = "yyyy";
-                                } else if (nTxt.matches("^\\d{4}-\\d{2}$")) {
-                                    dateTimeFormat = "yyyy-MM";
+                    if (nTxt != "") {
+                        if(dateTimeFormat != null){
+                            Pattern yearRangePattern = Pattern.compile(".*(\\d{4})-(\\d{4}).*");
+                            Pattern yearRangeSpacePattern = Pattern.compile("^(\\d{4}) (\\d{4})$");
+                            Matcher yearRangeMatcher = yearRangePattern.matcher(nTxt);
+                            Matcher yearRangeSpaceMatcher = yearRangeSpacePattern.matcher(nTxt);
+                            if (dateRange != null && (yearRangeMatcher.matches() || yearRangeSpaceMatcher.matches())) {
+                                String years[];
+                                String year1 = null;
+                                String year2 = null;
+                                if (yearRangeMatcher.matches()) {
+                                    year1 = yearRangeMatcher.group(1);
+                                    year2 = yearRangeMatcher.group(2);
+                                } else if (yearRangeSpaceMatcher.matches()) {
+                                    year1 = yearRangeSpaceMatcher.group(1);
+                                    year2 = yearRangeSpaceMatcher.group(2);
                                 }
-                                SimpleDateFormat recordDateFormat = new SimpleDateFormat(dateTimeFormat);
-                                Date recordDate = recordDateFormat.parse(nTxt);
-                                SimpleDateFormat solrDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                                String solrDateTxt = solrDateFormat.format(recordDate);
-                                valueList.add(solrDateTxt);
-                            } catch (ParseException ex) {
-                                logger.error(ex);
+                                if (Integer.parseInt(year1) < Integer.parseInt(year2)) {
+                                    years = new String[]{year1, year2};
+                                } else {
+                                    years = new String[]{year2, year1};
+                                }
+                                String rangeTxt = "[" + String.join(" TO ", years) + "]";
+                                valueList.add(rangeTxt);
+                            } else {
+                                try {
+                                    // Convert input date into a date that solr understands
+                                    Pattern fullDatePattern = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
+                                    Matcher fullDateMatcher = fullDatePattern.matcher(nTxt);
+                                    if (fullDateMatcher.find()) {
+                                        nTxt = fullDateMatcher.group(0);
+                                    } else if (nTxt.matches("^\\d{4}$")) {
+                                        dateTimeFormat = "yyyy";
+                                    } else if (nTxt.matches("^\\d{4}-\\d{2}$")) {
+                                        dateTimeFormat = "yyyy-MM";
+                                    }
+                                    SimpleDateFormat recordDateFormat = new SimpleDateFormat(dateTimeFormat);
+                                    Date recordDate = recordDateFormat.parse(nTxt);
+                                    SimpleDateFormat solrDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                                    String solrDateTxt = solrDateFormat.format(recordDate);
+                                    valueList.add(solrDateTxt);
+                                } catch (ParseException ex) {
+                                    logger.error(ex);
+                                }
                             }
+                        } else {
+                            valueList.add(nTxt);
                         }
-                    } else {
-                        valueList.add(nTxt);
+                        logger.debug("Found value for field " + field.get(NAME_FIELD) + n.getTextContent());
                     }
-                    logger.debug("Found value for field " + field.get(NAME_FIELD) + n.getTextContent());
-                    
                 }
                 // If the field is not multivalued put the first item from the valueList as the value of the field
                 if(sf != null && !sf.multiValued() && valueList.size() > 0){
