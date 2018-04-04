@@ -337,19 +337,19 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                     Node n = nList.item(i);
                     String nTxt = n.getTextContent();
                     if(dateTimeFormat != null){
-                        if (dateRange != null && nTxt.matches("\\d{4}-\\d{4}")) {
+                        if (dateRange != null && nTxt.matches("^\\d{4}-\\d{4}$")) {
                             String years[] = nTxt.split("-");
                             String rangeTxt = "[" + String.join(" TO ", years) + "]";
                             valueList.add(rangeTxt);
                         } else {
                             try {
                                 // Convert input date into a date that solr understands
-                                SimpleDateFormat recordDateFormat;
                                 if (nTxt.matches("^\\d{4}$")) {
-                                    recordDateFormat = new SimpleDateFormat("yyyy");
-                                } else {
-                                    recordDateFormat = new SimpleDateFormat(dateTimeFormat);
+                                    dateTimeFormat = "yyyy";
+                                } else if (nTxt.matches("^\\d{4}-\\d{2}$")) {
+                                    dateTimeFormat = "yyyy-MM";
                                 }
+                                SimpleDateFormat recordDateFormat = new SimpleDateFormat(dateTimeFormat);
                                 Date recordDate = recordDateFormat.parse(nTxt);
                                 SimpleDateFormat solrDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
                                 String solrDateTxt = solrDateFormat.format(recordDate);
