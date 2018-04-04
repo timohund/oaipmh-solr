@@ -330,7 +330,8 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                     continue;
                 String expression = field.get(XPATH_FIELD);
                 String dateTimeFormat = field.get(DATETIMEFORMAT_FIELD);
-                    
+                String dateRange = field.get(DATERANGE_FIELD);
+
                 NodeList nList = (NodeList) xpath.evaluate(expression, node, XPathConstants.NODESET);
                 for(int i=0;i<nList.getLength();i++){
                     Node n = nList.item(i);
@@ -346,7 +347,16 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                         } catch (ParseException ex) {
                             logger.error(ex);
                         }
-                    }else{
+                    } else if (dateRange != null) {
+                        // Convert input date range into a date range that solr understands
+                        String years[] = nTxt.split("-");
+                        if (years.length > 1) {
+                            String rangeTxt = "[" + String.join(" TO ", years) + "]";
+                            valueList.add(rangeTxt);
+                        } else {
+                            valueList.add(nTxt);
+                        }
+                    } else {
                         valueList.add(nTxt);
                     }
                     logger.debug("Found value for field " + field.get(NAME_FIELD) + n.getTextContent());
@@ -505,6 +515,7 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
     public static final String XPATH_FIELD = "xpath";
 
     public static final String DATETIMEFORMAT_FIELD = "dateTimeFormat";
+    public static final String DATERANGE_FIELD = "dateRange";
     public static final String CATALOG = "catalog";
     public static final String CATALOG_FIELD = "catalogField";
     
