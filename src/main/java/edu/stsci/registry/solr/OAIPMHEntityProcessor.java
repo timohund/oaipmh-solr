@@ -338,7 +338,7 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                 for(int i=0;i<nList.getLength();i++){
                     Node n = nList.item(i);
                     String nTxt = n.getTextContent();
-                    if(dateTimeFormat != null){
+                    if(dateTimeFormat != null && nTxt != ""){
                         Pattern yearRangePattern = Pattern.compile("\\d{4}-\\d{4}");
                         Matcher yearRangeMatcher = yearRangePattern.matcher(nTxt);
                         if (dateRange != null && yearRangeMatcher.find()) {
