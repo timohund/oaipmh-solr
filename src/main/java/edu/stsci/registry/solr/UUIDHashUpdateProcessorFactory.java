@@ -31,19 +31,20 @@ public class UUIDHashUpdateProcessorFactory extends SimpleUpdateProcessorFactory
         }
 
         SolrInputDocument doc = cmd.getSolrInputDocument();
-        String val = doc.getFieldValue(valFieldName).toString();
+        Object val = doc.getFieldValue(valFieldName);
 
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(val.getBytes());
-            BigInteger number = new BigInteger(1, messageDigest);
-            String uuid = number.toString(16);
+        if (val != null) {
+            try {
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                byte[] messageDigest = md.digest(val.toString().getBytes());
+                BigInteger number = new BigInteger(1, messageDigest);
+                String uuid = number.toString(16);
 
-            doc.addField(idFieldName, uuid);
+                doc.addField(idFieldName, uuid);
 
-        } catch (NoSuchAlgorithmException x) {
-            // do proper exception handling
+            } catch (NoSuchAlgorithmException x) {
+                // do proper exception handling
+            }
         }
-
     }
 }
