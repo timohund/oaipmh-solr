@@ -216,11 +216,9 @@ public class OAIPMHEntityProcessor extends EntityProcessorBase{
                 }
                 uriBuilder.setParameter("metadataPrefix", metadataPrefix);
                 String set = context.getEntityAttribute(SET);
-                if(set == null){
-                    logger.error("Set must be set for OAI-PMH data import.");
-                    return false;
+                if(set != null){
+                    uriBuilder.setParameter("set", set);
                 }
-                uriBuilder.setParameter("set", set);
 
                 if(from != null){
                     //DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
