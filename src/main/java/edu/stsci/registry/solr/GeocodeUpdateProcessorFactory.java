@@ -2,6 +2,7 @@ package edu.stsci.registry.solr;
 
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeocodingApi;
+import com.google.maps.errors.ApiException;
 import com.google.maps.model.GeocodingResult;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
@@ -17,10 +18,11 @@ import java.util.Collection;
 
 public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory {
     private static final String DB_DRIVER = "org.h2.Driver";
-    private static final String DB_CONNECTION = "jdbc:h2:~/test";
+    private static final String DB_CONNECTION = "jdbc:h2:/opt/solr/server/solr/geolocation_cache";
 
-    private static String apiKey = "AIz...";
+    private static String apiKey = null;
     private static final Logger logger = LogManager.getLogger(OAIPMHEntityProcessor.class.getName());
+    private static final String APIKEY_PARAM = "geolocationApiKey";
     private static final String PLACENAME_PARAM = "placenameField";
     private static final String COORDINATES_PARAM = "coordinatesField";
     private static final String GEOJSON_PARAM = "geojsonField";
@@ -48,14 +50,33 @@ public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory 
 
     @Override
     protected void process(AddUpdateCommand cmd, SolrQueryRequest req, SolrQueryResponse rsp) {
+        if (StringUtils.isEmpty(apiKey)) {
+            apiKey = getParam(APIKEY_PARAM);
+            if (apiKey == null) {
+                logger.info("Error loading API Key");
+                return;
+            }
+        }
         if (StringUtils.isEmpty(placenameField)) {
             placenameField = getParam(PLACENAME_PARAM);
+            if (placenameField == null) {
+                logger.info("placenameField must be defined in solrconfig.xml");
+                return;
+            }
         }
         if (StringUtils.isEmpty(coordinatesField)) {
             coordinatesField = getParam(COORDINATES_PARAM);
+            if (coordinatesField == null) {
+                logger.info("coordinatesField must be defined in solrconfig.xml");
+                return;
+            }
         }
         if (StringUtils.isEmpty(geojsonField)) {
             geojsonField = getParam(GEOJSON_PARAM);
+            if (geojsonField == null) {
+                logger.info("geojsonField must be defined in solrconfig.xml");
+                return;
+            }
         }
 
         SolrInputDocument doc = cmd.getSolrInputDocument();
@@ -70,12 +91,18 @@ public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory 
                     if (coordinates == null) {
                         logger.info("Geolocating: " + address);
                         GeoApiContext context = new GeoApiContext.Builder().apiKey(apiKey).build();
-                        GeocodingResult[] results = GeocodingApi.geocode(context, address).awaitIgnoreError();
-                        if (results.length == 0) {
-                            logger.info("Geolocation returned 0 results: " + address);
-                            continue;
+                        try {
+                            GeocodingResult[] results = GeocodingApi.geocode(context, address).await();
+                            if (results == null || results.length == 0) {
+                                logger.info("Geolocation returned 0 results: " + address);
+                                continue;
+                            }
+                            coordinates = insertWithPreparedStatement(address, results[0].geometry.location.lat, results[0].geometry.location.lng, results[0].partialMatch);
+                        } catch (ApiException e) {
+                            logger.info("Geocoding API error: " + e.getLocalizedMessage());
+                        } catch (Exception e) {
+                            logger.info("Geocoding error: " + e.getLocalizedMessage());
                         }
-                        coordinates = insertWithPreparedStatement(address, results[0].geometry.location.lat, results[0].geometry.location.lng, results[0].partialMatch);
                     } else {
                         logger.info("Found cached location");
                     }
