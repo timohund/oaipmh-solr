@@ -125,8 +125,6 @@ public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory 
                     logger.info("Geolocation error: " + e.getLocalizedMessage());
                 }
             }
-        } else {
-            logger.info("No location found");
         }
     }
 
