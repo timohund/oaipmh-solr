@@ -135,7 +135,7 @@ public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory 
         PreparedStatement createPreparedStatement;
         PreparedStatement selectPreparedStatement;
 
-        String CreateQuery = "CREATE TABLE IF NOT EXISTS GEOLOCATION(id serial primary key, name varchar(255), lat double precision, lng double precision, partial boolean)";
+        String CreateQuery = "CREATE TABLE IF NOT EXISTS GEOLOCATION(id serial primary key, name varchar(255) unique, lat double precision, lng double precision, partial boolean)";
         String SelectQuery = "select * from GEOLOCATION WHERE name = ?";
 
         Coordinates coordinates = null;
