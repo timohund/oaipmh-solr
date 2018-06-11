@@ -17,12 +17,13 @@ import java.sql.*;
 import java.util.Collection;
 
 public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory {
-    private static final String DB_DRIVER = "org.h2.Driver";
-    private static final String DB_CONNECTION = "jdbc:h2:/opt/solr/server/solr/geolocation_cache";
+    private static final String DB_DRIVER = "org.postgresql.Driver";
 
     private static String apiKey = null;
+    private static String DB_CONNECTION = null;
     private static final Logger logger = LogManager.getLogger(OAIPMHEntityProcessor.class.getName());
     private static final String APIKEY_PARAM = "geolocationApiKey";
+    private static final String DB_CONNECTION_PARAM = "dbConnection";
     private static final String PLACENAME_PARAM = "placenameField";
     private static final String COORDINATES_PARAM = "coordinatesField";
     private static final String GEOJSON_PARAM = "geojsonField";
@@ -50,6 +51,13 @@ public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory 
 
     @Override
     protected void process(AddUpdateCommand cmd, SolrQueryRequest req, SolrQueryResponse rsp) {
+        if (StringUtils.isEmpty(DB_CONNECTION)) {
+            DB_CONNECTION = getParam(DB_CONNECTION_PARAM);
+            if (DB_CONNECTION == null) {
+                logger.info("Missing " +  DB_CONNECTION_PARAM + " string");
+                return;
+            }
+        }
         if (StringUtils.isEmpty(apiKey)) {
             apiKey = getParam(APIKEY_PARAM);
             if (apiKey == null) {
@@ -127,7 +135,7 @@ public class GeocodeUpdateProcessorFactory extends SimpleUpdateProcessorFactory 
         PreparedStatement createPreparedStatement;
         PreparedStatement selectPreparedStatement;
 
-        String CreateQuery = "CREATE TABLE IF NOT EXISTS GEOLOCATION(id int auto_increment primary key, name varchar(255), lat double, lng double, partial boolean)";
+        String CreateQuery = "CREATE TABLE IF NOT EXISTS GEOLOCATION(id serial primary key, name varchar(255), lat double precision, lng double precision, partial boolean)";
         String SelectQuery = "select * from GEOLOCATION WHERE name = ?";
 
         Coordinates coordinates = null;
