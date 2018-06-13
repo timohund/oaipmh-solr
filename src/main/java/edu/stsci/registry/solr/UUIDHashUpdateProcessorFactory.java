@@ -1,6 +1,8 @@
 package edu.stsci.registry.solr;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
@@ -14,6 +16,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class UUIDHashUpdateProcessorFactory extends SimpleUpdateProcessorFactory {
 
+    private static final Logger logger = LogManager.getLogger(OAIPMHEntityProcessor.class.getName());
     private static final String FIELD_PARAM = "fieldName";
 
     protected String idFieldName = null;
@@ -40,6 +43,7 @@ public class UUIDHashUpdateProcessorFactory extends SimpleUpdateProcessorFactory
                 BigInteger number = new BigInteger(1, messageDigest);
                 String uuid = number.toString(16);
 
+                logger.info("UUID: " + uuid);
                 doc.addField(idFieldName, uuid);
 
             } catch (NoSuchAlgorithmException x) {
